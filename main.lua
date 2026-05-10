@@ -1,19 +1,23 @@
--- MM2 Script V3.4 - ULTRA SAFE MODE (0.5S COOLDOWN)
+-- MM2 Script V3.5 - AUTO EXECUTE READY (0.5S SAFE)
+repeat task.wait() until game:IsLoaded() -- Đảm bảo game load xong mới chạy
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
--- State
+-- Khởi tạo State (Mặc định OFF để an toàn, mày tự bật sau khi vào game)
 local Toggles = {
     ESP = false,
     AutoCoin = false,
     AutoAttack = false
 }
 
--- UI Setup (Mượt mà Gen Z)
+-- UI Setup (Bo góc Gen Z cho bớt phèn)
+if CoreGui:FindFirstChild("MM2_Hub_Auto") then CoreGui.MM2_Hub_Auto:Destroy() end
+
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MM2_Hub_UltraSafe"
+ScreenGui.Name = "MM2_Hub_Auto"
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
@@ -25,7 +29,7 @@ Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "MM2 V3.4 - THẰNG ĐẦN"
+Title.Text = "MM2 AUTO - THẰNG ĐẦN"
 Title.TextColor3 = Color3.fromRGB(222, 255, 154)
 Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 Title.Parent = MainFrame
@@ -56,14 +60,15 @@ CreateButton("ESP Players", "ESP")
 CreateButton("Auto Collect Coins", "AutoCoin")
 CreateButton("Auto Kill/Shoot Aura", "AutoAttack")
 
--- ULTRA SAFE COIN (0.5S Cooldown)
+-- Vòng lặp nhặt xu an toàn (0.5s Cooldown)
 task.spawn(function()
-    while task.wait(0.5) do 
+    while true do
+        task.wait(0.5)
         if Toggles.AutoCoin and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             for _, v in pairs(workspace:GetDescendants()) do
                 if Toggles.AutoCoin and v:IsA("BasePart") and (v.Name == "CoinVisual" or v.Name == "Coin") then
                     LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                    task.wait(0.5) -- Nghỉ hẳn nửa giây cho server nó tin mày là người
+                    task.wait(0.5)
                     if not Toggles.AutoCoin then break end
                 end
             end
@@ -71,9 +76,10 @@ task.spawn(function()
     end
 end)
 
--- ULTRA SAFE ATTACK
+-- Vòng lặp tấn công an toàn
 task.spawn(function()
-    while task.wait(0.5) do -- Cooldown tấn công cũng 0.5s luôn
+    while true do
+        task.wait(0.5)
         if Toggles.AutoAttack then
             local Knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
             local Gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
@@ -84,7 +90,7 @@ task.spawn(function()
                     if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
                         LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
                         Knife:Activate()
-                        break -- Chém xong một đứa rồi nghỉ
+                        break 
                     end
                 end
             elseif Gun then
@@ -93,7 +99,7 @@ task.spawn(function()
                     if v ~= LocalPlayer and v.Character and (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) and v.Character.Humanoid.Health > 0 then
                         LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
                         Gun:Activate()
-                        break -- Bắn xong một phát rồi nghỉ
+                        break
                     end
                 end
             end
@@ -101,7 +107,7 @@ task.spawn(function()
     end
 end)
 
--- ESP (Giữ nguyên hiệu năng)
+-- ESP
 RunService.RenderStepped:Connect(function()
     if Toggles.ESP then
         for _, p in pairs(Players:GetPlayers()) do

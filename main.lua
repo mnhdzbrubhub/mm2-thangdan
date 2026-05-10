@@ -72,7 +72,7 @@ task.spawn(function()
                 if Toggles.AutoCoin and v:IsA("BasePart") and (v.Name == "CoinVisual" or v.Name == "Coin") then
                     -- Bay thẳng vào tâm đồng xu
                     LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                    task.wait(0.05) -- Tốc độ bàn thờ cho Pixel 4
+                    task.wait(0.1) -- Tốc độ bàn thờ cho Pixel 4
                     if not Toggles.AutoCoin then break end
                 end
             end

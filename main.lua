@@ -1,4 +1,4 @@
--- MM2 Script V4.7 - ROLE INTELLIGENCE (KILL/SHERIFF > COIN)
+-- MM2 Script V4.8 - ANTI-VOID & LOBBY SAFE
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
@@ -10,16 +10,16 @@ local LocalPlayer = Players.LocalPlayer
 
 local Toggles = { ESP = false, AutoCoin = false, AutoAttack = false }
 
--- UI SETUP
-if CoreGui:FindFirstChild("ThangDan_V47") then CoreGui.ThangDan_V47:Destroy() end
-local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "ThangDan_V47"
+-- UI SETUP (GIỮ NGUYÊN)
+if CoreGui:FindFirstChild("ThangDan_V48") then CoreGui.ThangDan_V48:Destroy() end
+local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "ThangDan_V48"
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 220, 0, 180); Main.Position = UDim2.new(0.5, -110, 0.5, -90)
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Main.Active = true; Main.Draggable = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 35); Title.Text = "MM2 V4.7 - ROLE SMART"; Title.TextColor3 = Color3.fromRGB(222, 255, 154)
+Title.Size = UDim2.new(1, 0, 0, 35); Title.Text = "MM2 V4.8 - ANTI VOID"; Title.TextColor3 = Color3.fromRGB(222, 255, 154)
 Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Title.Font = Enum.Font.GothamBold
 Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
 
@@ -43,6 +43,11 @@ CreateBtn("ESP Players", "ESP")
 CreateBtn("Auto Coin", "AutoCoin")
 CreateBtn("Auto Kill/Sheriff", "AutoAttack")
 
+-- CHECK XEM CÓ ĐANG TRONG TRẬN KHÔNG
+local function IsInMatch()
+    return workspace:FindFirstChild("Normal") ~= nil -- MM2 thường để map trong folder Normal khi bắt đầu
+end
+
 local function TweenTo(cframe, speed)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local dist = (LocalPlayer.Character.HumanoidRootPart.Position - cframe.Position).Magnitude
@@ -51,7 +56,6 @@ local function TweenTo(cframe, speed)
     end
 end
 
--- KIỂM TRA ROLE
 local function GetMyRole()
     local tool = LocalPlayer.Backpack:FindFirstChild("Knife") or LocalPlayer.Character:FindFirstChild("Knife")
     if tool then return "Killer" end
@@ -60,10 +64,10 @@ local function GetMyRole()
     return "Innocent"
 end
 
--- LOGIC AUTO ATTACK
+-- LOGIC AUTO ATTACK (THÊM CHECK MATCH)
 task.spawn(function()
     while task.wait(0.4) do
-        if Toggles.AutoAttack then
+        if Toggles.AutoAttack and IsInMatch() then
             pcall(function()
                 local role = GetMyRole()
                 if role ~= "Innocent" then
@@ -76,7 +80,7 @@ task.spawn(function()
                             if d < dist then dist = d; target = v end
                         end
                     end
-                    if target then
+                    if target and IsInMatch() then -- Check lại lần nữa trước khi bay
                         local tool = (role == "Killer") and (LocalPlayer.Backpack:FindFirstChild("Knife") or LocalPlayer.Character:FindFirstChild("Knife")) or (LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Gun"))
                         if tool.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(tool) end
                         local offset = (role == "Killer") and CFrame.new(0, 0, 1.1) or CFrame.new(0, 0, 5)
@@ -90,13 +94,13 @@ task.spawn(function()
     end
 end)
 
--- LOGIC AUTO COIN (CHỈ CHẠY KHI LÀ INNOCENT)
+-- LOGIC AUTO COIN (THÊM CHECK MATCH)
 task.spawn(function()
     while task.wait(0.5) do
-        if Toggles.AutoCoin and GetMyRole() == "Innocent" then
+        if Toggles.AutoCoin and IsInMatch() and GetMyRole() == "Innocent" then
             pcall(function()
                 for _, v in pairs(workspace:GetDescendants()) do
-                    if Toggles.AutoCoin and GetMyRole() == "Innocent" and v:IsA("TouchTransmitter") and v.Parent and (v.Parent.Name:find("Coin") or v.Parent.Name:find("Gold")) then
+                    if Toggles.AutoCoin and IsInMatch() and GetMyRole() == "Innocent" and v:IsA("TouchTransmitter") and v.Parent and (v.Parent.Name:find("Coin") or v.Parent.Name:find("Gold")) then
                         local tw = TweenTo(v.Parent.CFrame, 22)
                         if tw then tw.Completed:Wait() end
                         task.wait(0.5)
@@ -107,7 +111,7 @@ task.spawn(function()
     end
 end)
 
--- ESP
+-- ESP (LUÔN CHẠY)
 RunService.RenderStepped:Connect(function()
     if Toggles.ESP then
         for _, p in pairs(Players:GetPlayers()) do

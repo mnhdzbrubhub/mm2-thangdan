@@ -1,25 +1,27 @@
--- MM2 Script V5.1 - SENSOR SCAN (FIX ĐỨNG YÊN)
+-- MM2 Script V5.2 - SHERIFF AIMBOT & AUTO RESET
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local VirtualUser = game:GetService("VirtualUser")
-local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
 local Toggles = { ESP = false, AutoCoin = false, AutoAttack = false }
 
--- UI SETUP (GỌN NHẸ)
-if CoreGui:FindFirstChild("ThangDan_V51") then CoreGui.ThangDan_V51:Destroy() end
-local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "ThangDan_V51"
+-- UI SETUP (CỦA MÀY ĐÂY)
+if CoreGui:FindFirstChild("ThangDan_V52") then CoreGui.ThangDan_V52:Destroy() end
+local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "ThangDan_V52"
 local Main = Instance.new("Frame", ScreenGui)
 Main.Size = UDim2.new(0, 220, 0, 180); Main.Position = UDim2.new(0.5, -110, 0.5, -90)
 Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Active = true; Main.Draggable = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 35); Title.Text = "MM2 V5.1 - SENSOR"; Title.TextColor3 = Color3.fromRGB(222, 255, 154)
+Title.Size = UDim2.new(1, 0, 0, 35); Title.Text = "MM2 V5.2 - AIMBOT"; Title.TextColor3 = Color3.fromRGB(222, 255, 154)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Title.Font = Enum.Font.GothamBold
 Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 12)
 
@@ -41,7 +43,7 @@ end
 
 CreateBtn("ESP Players", "ESP")
 CreateBtn("Auto Coin", "AutoCoin")
-CreateBtn("Auto Kill/Sheriff", "AutoAttack")
+CreateBtn("Auto Kill/Aim", "AutoAttack")
 
 -- TWEEN ENGINE
 local function TweenTo(cframe, speed)
@@ -52,7 +54,13 @@ local function TweenTo(cframe, speed)
     end
 end
 
--- KIỂM TRA VAI TRÒ
+-- LOGIC AUTO AIM (CHỈ DÀNH CHO SHERIFF)
+local function AimAt(targetPart)
+    if targetPart and Camera then
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+    end
+end
+
 local function GetRole()
     local char = LocalPlayer.Character
     if not char then return "Innocent" end
@@ -61,9 +69,9 @@ local function GetRole()
     return "Innocent"
 end
 
--- AUTO ATTACK
+-- VÒNG LẶP CHIẾN ĐẤU (CÓ AIMBOT)
 task.spawn(function()
-    while task.wait(0.4) do
+    while task.wait(0.3) do
         if Toggles.AutoAttack then
             pcall(function()
                 local role = GetRole()
@@ -71,18 +79,24 @@ task.spawn(function()
                     local target, dist = nil, math.huge
                     for _, v in pairs(Players:GetPlayers()) do
                         if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
-                            local hasK = v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")
-                            if role == "Sheriff" and not hasK then continue end
+                            local isK = v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")
+                            if role == "Sheriff" and not isK then continue end
                             local d = (v.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
                             if d < dist then dist = d; target = v end
                         end
                     end
+                    
                     if target then
                         local tool = (role == "Killer") and (LocalPlayer.Backpack:FindFirstChild("Knife") or LocalPlayer.Character:FindFirstChild("Knife")) or (LocalPlayer.Backpack:FindFirstChild("Gun") or LocalPlayer.Character:FindFirstChild("Gun"))
                         if tool and tool.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(tool) end
-                        local offset = (role == "Killer") and CFrame.new(0, 0, 1.1) or CFrame.new(0, 0, 4.5)
-                        local tw = TweenTo(target.Character.HumanoidRootPart.CFrame * offset, 40)
+                        
+                        -- Nếu là Sheriff: Bật Aim
+                        if role == "Sheriff" then AimAt(target.Character.HumanoidRootPart) end
+                        
+                        local offset = (role == "Killer") and CFrame.new(0, 0, 1.1) or CFrame.new(0, 0, 6)
+                        local tw = TweenTo(target.Character.HumanoidRootPart.CFrame * offset, 45)
                         if tw then tw.Completed:Wait() end
+                        
                         VirtualUser:Button1Down(Vector2.new(0,0)); task.wait(0.1); VirtualUser:Button1Up(Vector2.new(0,0))
                     end
                 end
@@ -91,23 +105,19 @@ task.spawn(function()
     end
 end)
 
--- AUTO COIN (SENSOR SCAN)
+-- VÒNG LẶP NHẶT XU (TỰ RESET)
 task.spawn(function()
     while task.wait(0.6) do
         if Toggles.AutoCoin and GetRole() == "Innocent" then
             pcall(function()
-                local coinFound = false
                 for _, v in pairs(workspace:GetDescendants()) do
                     if not Toggles.AutoCoin or GetRole() ~= "Innocent" then break end
                     if v:IsA("TouchTransmitter") and v.Parent and (v.Parent.Name:find("Coin") or v.Parent.Name:find("Gold")) then
-                        coinFound = true
                         local tw = TweenTo(v.Parent.CFrame, 26)
                         if tw then tw.Completed:Wait() end
                         task.wait(0.4)
                     end
                 end
-                -- Nếu không tìm thấy xu nào, có nghĩa là đang ở Lobby hoặc chưa bắt đầu trận
-                if not coinFound then task.wait(2) end 
             end)
         end
     end

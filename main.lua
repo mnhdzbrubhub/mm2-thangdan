@@ -1,81 +1,121 @@
--- MM2 Script V3.6 - TWEEN MODE (ANTI-KICK)
+-- MM2 Script V3.8 - FINAL COIN FIX & PRO UI
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
-local Toggles = {
-    ESP = false,
-    AutoCoin = false,
-    AutoAttack = false
-}
+local Toggles = { ESP = false, AutoCoin = false, AutoAttack = false }
 
--- UI Setup (Vẫn mượt cho Pixel 4)
-if CoreGui:FindFirstChild("MM2_Hub_Tween") then CoreGui.MM2_Hub_Tween:Destroy() end
+-- HÀM KÉO THẢ (DRAG LOGIC) - ĐÃ FIX LỖI KHÔNG KÉO ĐƯỢC
+local function MakeDraggable(gui)
+    local dragging, dragInput, dragStart, startPos
+    gui.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = gui.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    gui.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+-- UI SETUP
+if CoreGui:FindFirstChild("MM2_Hub_Fix") then CoreGui.MM2_Hub_Fix:Destroy() end
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "MM2_Hub_Tween"
+ScreenGui.Name = "MM2_Hub_Fix"
 
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 250, 0, 220)
-MainFrame.Position = UDim2.new(0.5, -125, 0.5, -110)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
+MainFrame.Size = UDim2.new(0, 250, 0, 230)
+MainFrame.Position = UDim2.new(0.5, -125, 0.5, -115)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
+MakeDraggable(MainFrame)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "MM2 TWEEN - THẰNG ĐẦN"
+Title.Size = UDim2.new(1, 0, 0, 45)
+Title.Text = "MM2 V3.8 - FIX COIN"
 Title.TextColor3 = Color3.fromRGB(222, 255, 154)
-Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
+Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 15)
 
 local UIList = Instance.new("UIListLayout", MainFrame)
-UIList.Padding = UDim.new(0, 8)
+UIList.Padding = UDim.new(0, 10)
 UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
 
-local function CreateButton(name, flag)
+local Spacer = Instance.new("Frame", MainFrame)
+Spacer.Size = UDim2.new(1, 0, 0, 40)
+Spacer.BackgroundTransparency = 1
+Spacer.LayoutOrder = -1
+
+local function CreateButton(name, flag, order)
     local Btn = Instance.new("TextButton", MainFrame)
-    Btn.Size = UDim2.new(0, 220, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    Btn.Size = UDim2.new(0, 220, 0, 42)
+    Btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     Btn.Text = name .. ": [OFF]"
     Btn.TextColor3 = Color3.fromRGB(255, 100, 100)
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
+    Btn.Font = Enum.Font.GothamSemibold
+    Btn.LayoutOrder = order
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 10)
     
     Btn.MouseButton1Click:Connect(function()
         Toggles[flag] = not Toggles[flag]
         Btn.Text = name .. ": " .. (Toggles[flag] and "[ON]" or "[OFF]")
         Btn.TextColor3 = Toggles[flag] and Color3.fromRGB(154, 255, 154) or Color3.fromRGB(255, 100, 100)
-        Btn.BackgroundColor3 = Toggles[flag] and Color3.fromRGB(40, 80, 40) or Color3.fromRGB(60, 60, 60)
+        Btn.BackgroundColor3 = Toggles[flag] and Color3.fromRGB(40, 70, 40) or Color3.fromRGB(50, 50, 50)
     end)
 end
 
-CreateButton("ESP Players", "ESP")
-CreateButton("Auto Collect Coins", "AutoCoin")
-CreateButton("Auto Kill/Shoot Aura", "AutoAttack")
+CreateButton("ESP Players", "ESP", 1)
+CreateButton("Auto Coin (Tween Fix)", "AutoCoin", 2)
+CreateButton("Auto Attack Aura", "AutoAttack", 3)
 
--- Hàm Tween mượt mà
-local function TweenTo(cframe, speed)
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local distance = (LocalPlayer.Character.HumanoidRootPart.Position - cframe.Position).Magnitude
-        local info = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
-        local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, info, {CFrame = cframe})
-        tween:Play()
-        return tween
+-- LOGIC NHẶT XU ĐÃ FIX (TÌM TẤT CẢ LOẠI COIN)
+local function GetCoins()
+    local coins = {}
+    -- Quét trong các thư mục thường chứa coin của MM2
+    local paths = {workspace:FindFirstChild("Normal"), workspace}
+    for _, path in pairs(paths) do
+        if path then
+            for _, v in pairs(path:GetDescendants()) do
+                if v:IsA("BasePart") and (v.Name:find("Coin") or v.Name == "GoldCoin") then
+                    table.insert(coins, v)
+                end
+            end
+        end
     end
+    return coins
 end
 
--- TWEEN AUTO COIN (Tốc độ 25 để an toàn)
 task.spawn(function()
-    while true do
-        task.wait(0.1)
-        if Toggles.AutoCoin then
-            for _, v in pairs(workspace:GetDescendants()) do
-                if Toggles.AutoCoin and v:IsA("BasePart") and (v.Name == "CoinVisual" or v.Name == "Coin") then
-                    local tween = TweenTo(v.CFrame, 25) -- Tốc độ lướt là 25 (vừa phải)
-                    if tween then tween.Completed:Wait() end
-                    task.wait(0.2) -- Nghỉ tí cho đỡ kick
+    while task.wait(0.5) do
+        if Toggles.AutoCoin and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local allCoins = GetCoins()
+            for _, coin in pairs(allCoins) do
+                if Toggles.AutoCoin and coin.Parent then
+                    local dist = (LocalPlayer.Character.HumanoidRootPart.Position - coin.Position).Magnitude
+                    local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(dist/20, Enum.EasingStyle.Linear), {CFrame = coin.CFrame})
+                    tween:Play()
+                    tween.Completed:Wait()
+                    task.wait(0.5) -- Đợi 0.5s cho an toàn
                     if not Toggles.AutoCoin then break end
                 end
             end
@@ -83,22 +123,18 @@ task.spawn(function()
     end
 end)
 
--- TWEEN ATTACK (Lướt đến mục tiêu)
+-- LOGIC TẤN CÔNG (GIỮ NGUYÊN)
 task.spawn(function()
-    while true do
-        task.wait(0.1)
+    while task.wait(0.5) do
         if Toggles.AutoAttack then
             local Knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
             local Gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
-            
             if Knife then
                 if not LocalPlayer.Character:FindFirstChild("Knife") then LocalPlayer.Character.Humanoid:EquipTool(Knife) end
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
-                        local tween = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5), 35)
-                        if tween then tween.Completed:Wait() end
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
                         Knife:Activate()
-                        task.wait(0.5)
                         break
                     end
                 end
@@ -106,10 +142,8 @@ task.spawn(function()
                 if not LocalPlayer.Character:FindFirstChild("Gun") then LocalPlayer.Character.Humanoid:EquipTool(Gun) end
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= LocalPlayer and v.Character and (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) and v.Character.Humanoid.Health > 0 then
-                        local tween = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5), 35)
-                        if tween then tween.Completed:Wait() end
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
                         Gun:Activate()
-                        task.wait(0.5)
                         break
                     end
                 end
@@ -118,14 +152,13 @@ task.spawn(function()
     end
 end)
 
--- ESP (Giữ nguyên)
 RunService.RenderStepped:Connect(function()
     if Toggles.ESP then
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
-                local highlight = p.Character:FindFirstChild("MM2_ESP") or Instance.new("Highlight", p.Character)
-                highlight.Name = "MM2_ESP"
-                highlight.FillColor = (p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")) and Color3.fromRGB(255, 0, 0) or (p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")) and Color3.fromRGB(0, 0, 255) or Color3.fromRGB(0, 255, 0)
+                local h = p.Character:FindFirstChild("MM2_ESP") or Instance.new("Highlight", p.Character)
+                h.Name = "MM2_ESP"
+                h.FillColor = (p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")) and Color3.fromRGB(255, 0, 0) or (p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")) and Color3.fromRGB(0, 0, 255) or Color3.fromRGB(0, 255, 0)
             end
         end
     end

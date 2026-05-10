@@ -1,17 +1,17 @@
--- MM2 Script V4.2 - VIRTUAL CLICK ATTACK & AUTO SAVE
+-- MM2 Script V4.3 - ABSOLUTE FLY & FIX AUTO
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local VirtualUser = game:GetService("VirtualUser") -- Dùng để giả lập click
+local VirtualUser = game:GetService("VirtualUser")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
--- FILE CONFIG
-local filename = "thangdan_mm2_v4_2.json"
+-- CONFIG SYSTEM
+local filename = "thangdan_mm2_v4_3.json"
 local Toggles = { ESP = false, AutoCoin = false, AutoAttack = false }
 
 local function SaveConfig()
@@ -20,13 +20,13 @@ end
 
 local function LoadConfig()
     if isfile and isfile(filename) then
-        local data = HttpService:JSONDecode(readfile(filename))
-        for i, v in pairs(data) do Toggles[i] = v end
+        local success, data = pcall(function() return HttpService:JSONDecode(readfile(filename)) end)
+        if success then for i, v in pairs(data) do Toggles[i] = v end end
     end
 end
 LoadConfig()
 
--- DRAG UI LOGIC
+-- DRAG UI
 local function MakeDraggable(gui)
     local dragging, dragInput, dragStart, startPos
     gui.InputBegan:Connect(function(input)
@@ -45,23 +45,23 @@ local function MakeDraggable(gui)
 end
 
 -- UI SETUP
-if CoreGui:FindFirstChild("MM2_Hub_V4_2") then CoreGui.MM2_Hub_V4_2:Destroy() end
-local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "MM2_Hub_V4_2"
+if CoreGui:FindFirstChild("MM2_Hub_V4_3") then CoreGui.MM2_Hub_V4_3:Destroy() end
+local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "MM2_Hub_V4_3"
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 250, 0, 230); MainFrame.Position = UDim2.new(0.5, -125, 0.5, -115)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
 MakeDraggable(MainFrame)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 45); Title.Text = "MM2 V4.2 - AUTO CLICK"; Title.TextColor3 = Color3.fromRGB(222, 255, 154)
-Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Title.Font = Enum.Font.GothamBold; Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 15)
+Title.Size = UDim2.new(1, 0, 0, 45); Title.Text = "MM2 V4.3 - ABSOLUTE FLY"; Title.TextColor3 = Color3.fromRGB(222, 255, 154)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30); Title.Font = Enum.Font.GothamBold; Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 15)
 
 local UIList = Instance.new("UIListLayout", MainFrame); UIList.Padding = UDim.new(0, 10); UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function UpdateBtn(Btn, flag)
     Btn.Text = (flag == "ESP" and "ESP Players" or flag == "AutoCoin" and "Auto Coin" or "Auto Attack Aura") .. ": " .. (Toggles[flag] and "[ON]" or "[OFF]")
     Btn.TextColor3 = Toggles[flag] and Color3.fromRGB(154, 255, 154) or Color3.fromRGB(255, 100, 100)
-    Btn.BackgroundColor3 = Toggles[flag] and Color3.fromRGB(40, 75, 40) or Color3.fromRGB(55, 55, 55)
+    Btn.BackgroundColor3 = Toggles[flag] and Color3.fromRGB(30, 65, 30) or Color3.fromRGB(45, 45, 45)
 end
 
 local function CreateButton(name, flag, order)
@@ -74,7 +74,7 @@ local function CreateButton(name, flag, order)
 end
 CreateButton("ESP Players", "ESP", 1); CreateButton("Auto Coin", "AutoCoin", 2); CreateButton("Auto Attack Aura", "AutoAttack", 3)
 
--- HÀM TWEEN
+-- TWEEN ENGINE
 local function TweenTo(cframe, speed)
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local dist = (LocalPlayer.Character.HumanoidRootPart.Position - cframe.Position).Magnitude
@@ -83,59 +83,53 @@ local function TweenTo(cframe, speed)
     end
 end
 
--- AUTO ATTACK FIX (VIRTUAL CLICK)
+-- AUTO ATTACK (FLY & SHOOT/KILL)
 task.spawn(function()
     while task.wait(0.4) do
         if Toggles.AutoAttack then
-            local Knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
-            local Gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
-            
-            if Knife then
-                if Knife.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(Knife) end
-                for _, v in pairs(Players:GetPlayers()) do
-                    if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
-                        local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.1), 35)
-                        if tw then tw.Completed:Wait() end
-                        
-                        -- Giả lập click chuột/chạm màn hình để chém
-                        VirtualUser:Button1Down(Vector2.new(0,0))
-                        task.wait(0.1)
-                        VirtualUser:Button1Up(Vector2.new(0,0))
-                        
-                        task.wait(0.3)
+            pcall(function()
+                local Knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
+                local Gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
+                
+                if Knife then
+                    if Knife.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(Knife) end
+                    for _, v in pairs(Players:GetPlayers()) do
+                        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
+                            local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1), 35)
+                            if tw then tw.Completed:Wait() end
+                            VirtualUser:Button1Down(Vector2.new(0,0)); task.wait(0.05); VirtualUser:Button1Up(Vector2.new(0,0))
+                            task.wait(0.2)
+                        end
+                    end
+                elseif Gun then
+                    if Gun.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(Gun) end
+                    for _, v in pairs(Players:GetPlayers()) do
+                        if v ~= LocalPlayer and v.Character and (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) and v.Character.Humanoid.Health > 0 then
+                            local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4), 35)
+                            if tw then tw.Completed:Wait() end
+                            VirtualUser:Button1Down(Vector2.new(0,0)); task.wait(0.05); VirtualUser:Button1Up(Vector2.new(0,0))
+                            task.wait(0.4)
+                        end
                     end
                 end
-            elseif Gun then
-                if Gun.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(Gun) end
-                for _, v in pairs(Players:GetPlayers()) do
-                    if v ~= LocalPlayer and v.Character and (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) and v.Character.Humanoid.Health > 0 then
-                        local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4.5), 35)
-                        if tw then tw.Completed:Wait() end
-                        
-                        -- Giả lập click để bắn
-                        VirtualUser:Button1Down(Vector2.new(0,0))
-                        task.wait(0.1)
-                        VirtualUser:Button1Up(Vector2.new(0,0))
-                        
-                        task.wait(0.5)
-                    end
-                end
-            end
+            end)
         end
     end
 end)
 
--- AUTO COIN (SCANNER)
+-- AUTO COIN (FLY & COLLECT)
 task.spawn(function()
-    while task.wait(0.6) do
+    while task.wait(0.5) do
         if Toggles.AutoCoin and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            for _, v in pairs(workspace:GetDescendants()) do
-                if Toggles.AutoCoin and v:IsA("TouchTransmitter") and v.Parent and (v.Parent.Name:find("Coin") or v.Parent.Name:find("Gold")) then
-                    local tw = TweenTo(v.Parent.CFrame, 22)
-                    if tw then tw.Completed:Wait() end
-                    task.wait(0.5)
+            pcall(function()
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if Toggles.AutoCoin and v:IsA("TouchTransmitter") and v.Parent and (v.Parent.Name:find("Coin") or v.Parent.Name:find("Gold")) then
+                        local tw = TweenTo(v.Parent.CFrame, 22)
+                        if tw then tw.Completed:Wait() end
+                        task.wait(0.5)
+                    end
                 end
-            end
+            end)
         end
     end
 end)
@@ -143,12 +137,14 @@ end)
 -- ESP
 RunService.RenderStepped:Connect(function()
     if Toggles.ESP then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character then
-                local h = p.Character:FindFirstChild("MM2_ESP") or Instance.new("Highlight", p.Character)
-                h.Name = "MM2_ESP"
-                h.FillColor = (p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")) and Color3.fromRGB(255, 0, 0) or (p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")) and Color3.fromRGB(0, 0, 255) or Color3.fromRGB(0, 255, 0)
+        pcall(function()
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    local h = p.Character:FindFirstChild("MM2_ESP") or Instance.new("Highlight", p.Character)
+                    h.Name = "MM2_ESP"
+                    h.FillColor = (p.Backpack:FindFirstChild("Knife") or p.Character:FindFirstChild("Knife")) and Color3.fromRGB(255, 0, 0) or (p.Backpack:FindFirstChild("Gun") or p.Character:FindFirstChild("Gun")) and Color3.fromRGB(0, 0, 255) or Color3.fromRGB(0, 255, 0)
+                end
             end
-        end
+        end)
     end
 end)

@@ -1,4 +1,4 @@
--- MM2 Script V3.3 - SAFE MODE (ANTI-KICK)
+-- MM2 Script V3.4 - ULTRA SAFE MODE (0.5S COOLDOWN)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -11,9 +11,9 @@ local Toggles = {
     AutoAttack = false
 }
 
--- UI Setup
+-- UI Setup (Mượt mà Gen Z)
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MM2_Hub_Safe"
+ScreenGui.Name = "MM2_Hub_UltraSafe"
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
@@ -25,7 +25,7 @@ Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "MM2 SAFE - THẰNG ĐẦN"
+Title.Text = "MM2 V3.4 - THẰNG ĐẦN"
 Title.TextColor3 = Color3.fromRGB(222, 255, 154)
 Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 Title.Parent = MainFrame
@@ -56,15 +56,14 @@ CreateButton("ESP Players", "ESP")
 CreateButton("Auto Collect Coins", "AutoCoin")
 CreateButton("Auto Kill/Shoot Aura", "AutoAttack")
 
--- SAFE AUTO COIN (Tăng delay tránh Kick)
+-- ULTRA SAFE COIN (0.5S Cooldown)
 task.spawn(function()
-    while task.wait(0.5) do -- Nghỉ 0.5s giữa mỗi lần quét để server không nghi ngờ
+    while task.wait(0.5) do 
         if Toggles.AutoCoin and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             for _, v in pairs(workspace:GetDescendants()) do
                 if Toggles.AutoCoin and v:IsA("BasePart") and (v.Name == "CoinVisual" or v.Name == "Coin") then
-                    -- Bay đến nhưng chậm lại một chút
                     LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                    task.wait(0.3) -- Đứng lại 0.3s để "nhặt" xong mới bay tiếp
+                    task.wait(0.5) -- Nghỉ hẳn nửa giây cho server nó tin mày là người
                     if not Toggles.AutoCoin then break end
                 end
             end
@@ -72,9 +71,9 @@ task.spawn(function()
     end
 end)
 
--- AUTO ATTACK (Killer/Sheriff)
+-- ULTRA SAFE ATTACK
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0.5) do -- Cooldown tấn công cũng 0.5s luôn
         if Toggles.AutoAttack then
             local Knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
             local Gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
@@ -85,7 +84,7 @@ task.spawn(function()
                     if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
                         LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
                         Knife:Activate()
-                        task.wait(0.2) -- Tránh spam chém quá nhanh bị lỗi animation
+                        break -- Chém xong một đứa rồi nghỉ
                     end
                 end
             elseif Gun then
@@ -94,7 +93,7 @@ task.spawn(function()
                     if v ~= LocalPlayer and v.Character and (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) and v.Character.Humanoid.Health > 0 then
                         LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
                         Gun:Activate()
-                        task.wait(0.5) -- Bắn xong nghỉ tí rồi mới ngắm tiếp
+                        break -- Bắn xong một phát rồi nghỉ
                     end
                 end
             end
@@ -102,7 +101,7 @@ task.spawn(function()
     end
 end)
 
--- ESP (Giữ nguyên)
+-- ESP (Giữ nguyên hiệu năng)
 RunService.RenderStepped:Connect(function()
     if Toggles.ESP then
         for _, p in pairs(Players:GetPlayers()) do

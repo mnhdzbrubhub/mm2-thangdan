@@ -1,4 +1,4 @@
--- MM2 Script V4.0 - AUTO SAVE CONFIG & TWEEN MODE
+-- MM2 Script V4.1 - HARD ATTACK (KILLER/SHERIFF) & CONFIG SAVE
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
@@ -10,21 +10,20 @@ local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
 -- FILE CONFIG
-local filename = "thangdan_mm2.json"
+local filename = "thangdan_mm2_v4.json"
 local Toggles = { ESP = false, AutoCoin = false, AutoAttack = false }
 
--- Hàm lưu/load config
 local function SaveConfig()
-    writefile(filename, HttpService:JSONEncode(Toggles))
+    if writefile then writefile(filename, HttpService:JSONEncode(Toggles)) end
 end
 
 local function LoadConfig()
-    if isfile(filename) then
-        Toggles = HttpService:JSONDecode(readfile(filename))
+    if isfile and isfile(filename) then
+        local data = HttpService:JSONDecode(readfile(filename))
+        for i, v in pairs(data) do Toggles[i] = v end
     end
 end
-
-LoadConfig() -- Gọi load ngay khi script chạy
+LoadConfig()
 
 -- DRAG UI LOGIC
 local function MakeDraggable(gui)
@@ -45,91 +44,87 @@ local function MakeDraggable(gui)
 end
 
 -- UI SETUP
-if CoreGui:FindFirstChild("MM2_Hub_V4") then CoreGui.MM2_Hub_V4:Destroy() end
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "MM2_Hub_V4"
-
+if CoreGui:FindFirstChild("MM2_Hub_V4_1") then CoreGui.MM2_Hub_V4_1:Destroy() end
+local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "MM2_Hub_V4_1"
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 250, 0, 230)
-MainFrame.Position = UDim2.new(0.5, -125, 0.5, -115)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
+MainFrame.Size = UDim2.new(0, 250, 0, 230); MainFrame.Position = UDim2.new(0.5, -125, 0.5, -115)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
 MakeDraggable(MainFrame)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 45)
-Title.Text = "MM2 V4.0 - SAVE CONFIG"
-Title.TextColor3 = Color3.fromRGB(222, 255, 154)
-Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Title.Font = Enum.Font.GothamBold; Title.TextSize = 16
-Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 15)
+Title.Size = UDim2.new(1, 0, 0, 45); Title.Text = "MM2 V4.1 - FIX ATTACK"; Title.TextColor3 = Color3.fromRGB(222, 255, 154)
+Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Title.Font = Enum.Font.GothamBold; Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 15)
 
-local UIList = Instance.new("UIListLayout", MainFrame)
-UIList.Padding = UDim.new(0, 10); UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center; UIList.SortOrder = Enum.SortOrder.LayoutOrder
+local UIList = Instance.new("UIListLayout", MainFrame); UIList.Padding = UDim.new(0, 10); UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 local function UpdateBtn(Btn, flag)
-    Btn.Text = (flag == "ESP" and "ESP Players" or flag == "AutoCoin" and "Auto Coin" or "Auto Attack") .. ": " .. (Toggles[flag] and "[ON]" or "[OFF]")
+    Btn.Text = (flag == "ESP" and "ESP Players" or flag == "AutoCoin" and "Auto Coin" or "Auto Attack Aura") .. ": " .. (Toggles[flag] and "[ON]" or "[OFF]")
     Btn.TextColor3 = Toggles[flag] and Color3.fromRGB(154, 255, 154) or Color3.fromRGB(255, 100, 100)
-    Btn.BackgroundColor3 = Toggles[flag] and Color3.fromRGB(30, 60, 30) or Color3.fromRGB(45, 45, 45)
+    Btn.BackgroundColor3 = Toggles[flag] and Color3.fromRGB(40, 75, 40) or Color3.fromRGB(55, 55, 55)
 end
 
 local function CreateButton(name, flag, order)
     local Btn = Instance.new("TextButton", MainFrame)
-    Btn.Size = UDim2.new(0, 220, 0, 42)
-    Btn.Font = Enum.Font.GothamSemibold; Btn.LayoutOrder = order
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 10)
-    
-    UpdateBtn(Btn, flag) -- Cập nhật trạng thái từ config đã load
-    
+    Btn.Size = UDim2.new(0, 220, 0, 42); Btn.Font = Enum.Font.GothamSemibold; Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 10)
+    UpdateBtn(Btn, flag)
     Btn.MouseButton1Click:Connect(function()
-        Toggles[flag] = not Toggles[flag]
-        UpdateBtn(Btn, flag)
-        SaveConfig() -- Lưu ngay khi bấm nút
+        Toggles[flag] = not Toggles[flag]; UpdateBtn(Btn, flag); SaveConfig()
     end)
 end
+CreateButton("ESP Players", "ESP", 1); CreateButton("Auto Coin", "AutoCoin", 2); CreateButton("Auto Attack Aura", "AutoAttack", 3)
 
-CreateButton("ESP Players", "ESP", 1)
-CreateButton("Auto Coin", "AutoCoin", 2)
-CreateButton("Auto Attack", "AutoAttack", 3)
+-- HÀM TWEEN
+local function TweenTo(cframe, speed)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local dist = (LocalPlayer.Character.HumanoidRootPart.Position - cframe.Position).Magnitude
+        local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(dist/speed, Enum.EasingStyle.Linear), {CFrame = cframe})
+        tween:Play(); return tween
+    end
+end
 
--- LOGIC AUTO COIN (TWEEN)
+-- AUTO ATTACK FIX (HARD ATTACK)
 task.spawn(function()
-    while task.wait(0.5) do
-        if Toggles.AutoCoin and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            for _, v in pairs(workspace:GetDescendants()) do
-                if Toggles.AutoCoin and v:IsA("TouchTransmitter") and v.Parent and (v.Parent.Name:find("Coin") or v.Parent.Name:find("Gold")) then
-                    local target = v.Parent
-                    local dist = (LocalPlayer.Character.HumanoidRootPart.Position - target.Position).Magnitude
-                    local tween = TweenService:Create(LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(dist/22, Enum.EasingStyle.Linear), {CFrame = target.CFrame})
-                    tween:Play(); tween.Completed:Wait()
-                    task.wait(0.5)
+    while task.wait(0.3) do
+        if Toggles.AutoAttack then
+            local Knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
+            local Gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
+            
+            if Knife then
+                if Knife.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(Knife) end
+                for _, v in pairs(Players:GetPlayers()) do
+                    if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
+                        local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.2), 35)
+                        if tw then tw.Completed:Wait() end
+                        Knife:Activate()
+                        -- Bồi thêm chém trực tiếp
+                        if Knife:FindFirstChild("Attack") then Knife.Attack:FireServer() end
+                        task.wait(0.2)
+                    end
+                end
+            elseif Gun then
+                if Gun.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(Gun) end
+                for _, v in pairs(Players:GetPlayers()) do
+                    if v ~= LocalPlayer and v.Character and (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) and v.Character.Humanoid.Health > 0 then
+                        local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4), 35)
+                        if tw then tw.Completed:Wait() end
+                        Gun:Activate()
+                        task.wait(0.4)
+                    end
                 end
             end
         end
     end
 end)
 
--- LOGIC AUTO ATTACK
+-- AUTO COIN (SCANNER)
 task.spawn(function()
     while task.wait(0.5) do
-        if Toggles.AutoAttack then
-            local Knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
-            local Gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
-            if Knife then
-                if not LocalPlayer.Character:FindFirstChild("Knife") then LocalPlayer.Character.Humanoid:EquipTool(Knife) end
-                for _, v in pairs(Players:GetPlayers()) do
-                    if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
-                        Knife:Activate(); break
-                    end
-                end
-            elseif Gun then
-                if not LocalPlayer.Character:FindFirstChild("Gun") then LocalPlayer.Character.Humanoid:EquipTool(Gun) end
-                for _, v in pairs(Players:GetPlayers()) do
-                    if v ~= LocalPlayer and v.Character and (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) and v.Character.Humanoid.Health > 0 then
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
-                        Gun:Activate(); break
-                    end
+        if Toggles.AutoCoin and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            for _, v in pairs(workspace:GetDescendants()) do
+                if Toggles.AutoCoin and v:IsA("TouchTransmitter") and v.Parent and (v.Parent.Name:find("Coin") or v.Parent.Name:find("Gold")) then
+                    local tw = TweenTo(v.Parent.CFrame, 22)
+                    if tw then tw.Completed:Wait() end
+                    task.wait(0.5)
                 end
             end
         end

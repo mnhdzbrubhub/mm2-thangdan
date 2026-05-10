@@ -1,4 +1,4 @@
--- MM2 Script V3.2 - ULTIMATE COIN TELEPORT
+-- MM2 Script V3.3 - SAFE MODE (ANTI-KICK)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
@@ -11,31 +11,25 @@ local Toggles = {
     AutoAttack = false
 }
 
--- UI Setup (Giữ nguyên cho mày đỡ chê xấu)
+-- UI Setup
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MM2_Hub_V3_2"
+ScreenGui.Name = "MM2_Hub_Safe"
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 250, 0, 220)
 MainFrame.Position = UDim2.new(0.5, -125, 0.5, -110)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.BorderSizePixel = 0
-MainFrame.Active = true
-MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
-
-local UICorner = Instance.new("UICorner", MainFrame)
-UICorner.CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-Title.Text = "MM2 V3.2 - THẰNG ĐẦN"
+Title.Text = "MM2 SAFE - THẰNG ĐẦN"
 Title.TextColor3 = Color3.fromRGB(222, 255, 154)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 18
+Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 Title.Parent = MainFrame
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
 
 local UIList = Instance.new("UIListLayout", MainFrame)
 UIList.Padding = UDim.new(0, 8)
@@ -47,7 +41,6 @@ local function CreateButton(name, flag)
     Btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     Btn.Text = name .. ": [OFF]"
     Btn.TextColor3 = Color3.fromRGB(255, 100, 100)
-    Btn.Font = Enum.Font.GothamSemibold
     Btn.Parent = MainFrame
     Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
     
@@ -63,16 +56,15 @@ CreateButton("ESP Players", "ESP")
 CreateButton("Auto Collect Coins", "AutoCoin")
 CreateButton("Auto Kill/Shoot Aura", "AutoAttack")
 
--- FIXED AUTO COIN (Quét toàn bộ workspace)
+-- SAFE AUTO COIN (Tăng delay tránh Kick)
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0.5) do -- Nghỉ 0.5s giữa mỗi lần quét để server không nghi ngờ
         if Toggles.AutoCoin and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            -- Quét tìm coin bất kể nó nằm ở đâu
             for _, v in pairs(workspace:GetDescendants()) do
                 if Toggles.AutoCoin and v:IsA("BasePart") and (v.Name == "CoinVisual" or v.Name == "Coin") then
-                    -- Bay thẳng vào tâm đồng xu
+                    -- Bay đến nhưng chậm lại một chút
                     LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                    task.wait(0.05) -- Tốc độ bàn thờ cho Pixel 4
+                    task.wait(0.3) -- Đứng lại 0.3s để "nhặt" xong mới bay tiếp
                     if not Toggles.AutoCoin then break end
                 end
             end
@@ -82,7 +74,7 @@ end)
 
 -- AUTO ATTACK (Killer/Sheriff)
 task.spawn(function()
-    while task.wait() do
+    while task.wait(0.1) do
         if Toggles.AutoAttack then
             local Knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
             local Gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
@@ -91,8 +83,9 @@ task.spawn(function()
                 if not LocalPlayer.Character:FindFirstChild("Knife") then LocalPlayer.Character.Humanoid:EquipTool(Knife) end
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
-                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 2)
                         Knife:Activate()
+                        task.wait(0.2) -- Tránh spam chém quá nhanh bị lỗi animation
                     end
                 end
             elseif Gun then
@@ -101,6 +94,7 @@ task.spawn(function()
                     if v ~= LocalPlayer and v.Character and (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) and v.Character.Humanoid.Health > 0 then
                         LocalPlayer.Character.HumanoidRootPart.CFrame = v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
                         Gun:Activate()
+                        task.wait(0.5) -- Bắn xong nghỉ tí rồi mới ngắm tiếp
                     end
                 end
             end
@@ -108,7 +102,7 @@ task.spawn(function()
     end
 end)
 
--- ESP
+-- ESP (Giữ nguyên)
 RunService.RenderStepped:Connect(function()
     if Toggles.ESP then
         for _, p in pairs(Players:GetPlayers()) do

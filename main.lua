@@ -1,16 +1,17 @@
--- MM2 Script V4.1 - HARD ATTACK (KILLER/SHERIFF) & CONFIG SAVE
+-- MM2 Script V4.2 - VIRTUAL CLICK ATTACK & AUTO SAVE
 repeat task.wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local VirtualUser = game:GetService("VirtualUser") -- Dùng để giả lập click
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 
 -- FILE CONFIG
-local filename = "thangdan_mm2_v4.json"
+local filename = "thangdan_mm2_v4_2.json"
 local Toggles = { ESP = false, AutoCoin = false, AutoAttack = false }
 
 local function SaveConfig()
@@ -44,15 +45,15 @@ local function MakeDraggable(gui)
 end
 
 -- UI SETUP
-if CoreGui:FindFirstChild("MM2_Hub_V4_1") then CoreGui.MM2_Hub_V4_1:Destroy() end
-local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "MM2_Hub_V4_1"
+if CoreGui:FindFirstChild("MM2_Hub_V4_2") then CoreGui.MM2_Hub_V4_2:Destroy() end
+local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name = "MM2_Hub_V4_2"
 local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Size = UDim2.new(0, 250, 0, 230); MainFrame.Position = UDim2.new(0.5, -125, 0.5, -115)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
 MakeDraggable(MainFrame)
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 45); Title.Text = "MM2 V4.1 - FIX ATTACK"; Title.TextColor3 = Color3.fromRGB(222, 255, 154)
+Title.Size = UDim2.new(1, 0, 0, 45); Title.Text = "MM2 V4.2 - AUTO CLICK"; Title.TextColor3 = Color3.fromRGB(222, 255, 154)
 Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35); Title.Font = Enum.Font.GothamBold; Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 15)
 
 local UIList = Instance.new("UIListLayout", MainFrame); UIList.Padding = UDim.new(0, 10); UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -82,9 +83,9 @@ local function TweenTo(cframe, speed)
     end
 end
 
--- AUTO ATTACK FIX (HARD ATTACK)
+-- AUTO ATTACK FIX (VIRTUAL CLICK)
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(0.4) do
         if Toggles.AutoAttack then
             local Knife = LocalPlayer.Character:FindFirstChild("Knife") or LocalPlayer.Backpack:FindFirstChild("Knife")
             local Gun = LocalPlayer.Character:FindFirstChild("Gun") or LocalPlayer.Backpack:FindFirstChild("Gun")
@@ -93,22 +94,30 @@ task.spawn(function()
                 if Knife.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(Knife) end
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
-                        local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.2), 35)
+                        local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.1), 35)
                         if tw then tw.Completed:Wait() end
-                        Knife:Activate()
-                        -- Bồi thêm chém trực tiếp
-                        if Knife:FindFirstChild("Attack") then Knife.Attack:FireServer() end
-                        task.wait(0.2)
+                        
+                        -- Giả lập click chuột/chạm màn hình để chém
+                        VirtualUser:Button1Down(Vector2.new(0,0))
+                        task.wait(0.1)
+                        VirtualUser:Button1Up(Vector2.new(0,0))
+                        
+                        task.wait(0.3)
                     end
                 end
             elseif Gun then
                 if Gun.Parent ~= LocalPlayer.Character then LocalPlayer.Character.Humanoid:EquipTool(Gun) end
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= LocalPlayer and v.Character and (v.Backpack:FindFirstChild("Knife") or v.Character:FindFirstChild("Knife")) and v.Character.Humanoid.Health > 0 then
-                        local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4), 35)
+                        local tw = TweenTo(v.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 4.5), 35)
                         if tw then tw.Completed:Wait() end
-                        Gun:Activate()
-                        task.wait(0.4)
+                        
+                        -- Giả lập click để bắn
+                        VirtualUser:Button1Down(Vector2.new(0,0))
+                        task.wait(0.1)
+                        VirtualUser:Button1Up(Vector2.new(0,0))
+                        
+                        task.wait(0.5)
                     end
                 end
             end
@@ -118,7 +127,7 @@ end)
 
 -- AUTO COIN (SCANNER)
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(0.6) do
         if Toggles.AutoCoin and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             for _, v in pairs(workspace:GetDescendants()) do
                 if Toggles.AutoCoin and v:IsA("TouchTransmitter") and v.Parent and (v.Parent.Name:find("Coin") or v.Parent.Name:find("Gold")) then
